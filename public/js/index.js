@@ -42,6 +42,10 @@ async function userLogin(obj) {
     if (user.data.success) {
       alert(`${user.data.msg}`);
       localStorage.setItem("token", user.data.token);
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      users.push(user.data.name);
+      localStorage.setItem("users", JSON.stringify(users));
+      window.location.href = "../html/chat.html";
     }
   } catch (error) {
     console.log(error);

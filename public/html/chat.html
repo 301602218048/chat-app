@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat-App</title>
+    <link rel="stylesheet" href="/css/chat.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="chatbox">
+        <div class="chatbox-header">Chat Box</div>
+        <div class="chatbox-messages"></div>
+        <div>
+          <form id="form">
+            <div class="chatbox-input">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                id="new-message"
+              />
+              <button type="button" onclick="sendData(event)">Send</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+  <script>
+    const usersLoggedIn = JSON.parse(localStorage.getItem("users")) || [];
+
+    function showUserJoined(user) {
+      const userList = document.querySelector(".chatbox-messages");
+      const userDiv = document.createElement("div");
+      userDiv.className = "user-joined";
+      userDiv.textContent = `${user} joined in`;
+      userList.appendChild(userDiv);
+    }
+
+    usersLoggedIn.forEach((user) => showUserJoined(user));
+  </script>
+</html>
