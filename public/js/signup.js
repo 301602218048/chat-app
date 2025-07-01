@@ -3,7 +3,6 @@ const msg = document.getElementById("message");
 
 function handleSignUp(e) {
   e.preventDefault();
-  msg.innerHTML = "";
   const obj = {
     name: e.target.name.value,
     email: e.target.email.value,
@@ -16,7 +15,7 @@ function handleSignUp(e) {
 
 async function addData(obj) {
   try {
-    const user = await axios.post(api + "/signup", obj);
+    const user = await axios.post(`${api}/user/signup`, obj);
     if (user.data.success) {
       alert(`${user.data.msg}`);
     }
@@ -27,8 +26,9 @@ async function addData(obj) {
 }
 
 function updateDOM(user) {
+  msg.innerHTML = "";
   const para = document.createElement("p");
-  para.textContent = `Error: ${user.message}`;
+  para.textContent = `Error: ${user.response.data.msg}`;
   para.style.color = "red";
   msg.appendChild(para);
 }

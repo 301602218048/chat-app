@@ -9,7 +9,7 @@ const addUser = async (req, res) => {
     if (e) {
       return res
         .status(400)
-        .json({ msg: "Email already exists", success: false });
+        .json({ msg: "Email already exists, Please Login", success: false });
     }
     const saltRounds = 10;
     const hashpass = await bcrypt.hash(password, saltRounds);
@@ -19,7 +19,7 @@ const addUser = async (req, res) => {
       password: hashpass,
       phoneNumber: phoneNumber,
     });
-    res.status(201).json({ msg: "signed up successfully", success: true });
+    res.status(201).json({ msg: "Signed up successfully", success: true });
   } catch (error) {
     res.status(500).json({ msg: error.message, success: false });
   }
