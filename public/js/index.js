@@ -41,6 +41,7 @@ async function userLogin(obj) {
     console.log(user);
     if (user.data.success) {
       alert(`${user.data.msg}`);
+      localStorage.setItem("token", user.data.token);
     }
   } catch (error) {
     console.log(error);

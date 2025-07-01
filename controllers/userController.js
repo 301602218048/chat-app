@@ -1,6 +1,8 @@
 const Users = require("../models/user");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const addUser = async (req, res) => {
   try {
@@ -25,6 +27,31 @@ const addUser = async (req, res) => {
   }
 };
 
+const userLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const e = await Users.findOne({ where: { email } });
+    if (!e) {
+      return res.status(404).json({ msg: "User not found", success: false });
+    }
+    const isCorrect = await bcrypt.compare(password, e.password);
+    if (!isCorrect) {
+      return res
+        .status(401)
+        .json({ msg: "User not authorized", success: false });
+    }
+    const token = jwt.sign({ userId: e.id, email: e.email }, JWT_SECRET, {
+      expiresIn: "2h",
+    });
+    res
+      .status(200)
+      .json({ msg: "Logged in successfully", success: true, token });
+  } catch (error) {
+    res.status(500).json({ msg: error.message, success: false });
+  }
+};
+
 module.exports = {
   addUser,
+  userLogin,
 };
