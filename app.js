@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/user", userRoutes);
 app.use("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "signup.html"));
+  res.sendFile(path.join(__dirname, "public", "html", "signup.html"));
 });
 
 const port = process.env.PORT || 3000;
