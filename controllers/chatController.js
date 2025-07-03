@@ -1,4 +1,5 @@
 const Message = require("../models/message");
+const { Op } = require("sequelize");
 
 const postMessage = async (req, res) => {
   try {
@@ -21,13 +22,20 @@ const postMessage = async (req, res) => {
   }
 };
 
-const fetchMesssage = async (req, res) => {
+const fetchChat = async (req, res) => {
   try {
-    const messages = await Message.findAll();
-    if (messages.length === 0) {
-      return res.status(204).json({ success: false, msg: "No message found" });
+    const lastMsgId = +req.params.lastId;
+    const chat = await Message.findAll({
+      where: { id: { [Op.gt]: lastMsgId } },
+    });
+    if (chat.length === 0) {
+      return res
+        .status(200)
+        .json({ success: true, msg: "chat up to date", chat: [] });
     }
-    res.status(200).json({ success: true, messages: messages });
+    res
+      .status(200)
+      .json({ success: true, chat, lastChatId: chat[chat.length - 1].id });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, msg: `${error.message}` });
@@ -36,5 +44,5 @@ const fetchMesssage = async (req, res) => {
 
 module.exports = {
   postMessage,
-  fetchMesssage,
+  fetchChat,
 };
