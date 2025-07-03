@@ -21,6 +21,20 @@ const postMessage = async (req, res) => {
   }
 };
 
+const fetchMesssage = async (req, res) => {
+  try {
+    const messages = await Message.findAll();
+    if (messages.length === 0) {
+      return res.status(204).json({ success: false, msg: "No message found" });
+    }
+    res.status(200).json({ success: true, messages: messages });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, msg: `${error.message}` });
+  }
+};
+
 module.exports = {
   postMessage,
+  fetchMesssage,
 };
