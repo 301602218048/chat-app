@@ -10,35 +10,26 @@
   <body>
     <div class="container">
       <div class="chatbox">
-        <div class="chatbox-header">Chat Box</div>
+        <div class="chatbox-header">
+          Chat Box
+          <button id="logout" type="button" onclick="logout()">Log Out</button>
+        </div>
         <div class="chatbox-messages"></div>
         <div>
-          <form id="form">
+          <form id="form" onsubmit="sendData(event)">
             <div class="chatbox-input">
               <input
                 type="text"
                 placeholder="Type your message..."
                 id="new-message"
               />
-              <button type="button" onclick="sendData(event)">Send</button>
+              <button type="submit">Send</button>
             </div>
           </form>
         </div>
       </div>
     </div>
   </body>
-  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
-  <script>
-    const usersLoggedIn = JSON.parse(localStorage.getItem("users")) || [];
-
-    function showUserJoined(user) {
-      const userList = document.querySelector(".chatbox-messages");
-      const userDiv = document.createElement("div");
-      userDiv.className = "user-joined";
-      userDiv.textContent = `${user} joined in`;
-      userList.appendChild(userDiv);
-    }
-
-    usersLoggedIn.forEach((user) => showUserJoined(user));
-  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.2.3/axios.min.js"></script>
+  <script src="/js/chat.js"></script>
 </html>
