@@ -15,14 +15,6 @@ const Message = sequelize.define("messages", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  userId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: "users",
-      key: "id",
-    },
-  },
 });
 
 module.exports = Message;

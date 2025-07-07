@@ -3,6 +3,8 @@ const path = require("path");
 const db = require("./utils/db-connection");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const groupRoutes = require("./routes/groupRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 require("dotenv").config();
 
 //models
@@ -14,12 +16,14 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/user", userRoutes);
 app.use("/chat", chatRoutes);
+app.use("/group", groupRoutes);
+app.use("/admin", adminRoutes);
 app.use("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "html", "signup.html"));
 });
 
 const port = process.env.PORT || 3000;
-db.sync({ alter: false })
+db.sync({ force: false })
   .then(() => {
     app.listen(port, () => {
       console.log(`server running on http://localhost:${port}`);

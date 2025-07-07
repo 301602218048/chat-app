@@ -9,10 +9,42 @@
   </head>
   <body>
     <div class="container">
+      <div class="group-container">
+        <div>
+          <span id="current-user">Username</span>
+          <button id="logout" onclick="logout()">Log Out</button>
+        </div>
+        <button id="create-group-btn">Create Group</button>
+        <div id="create-group-form" class="form-popup">
+          <button id="close-btn" onclick="closeForm()">&times;</button>
+          <form id="my-form" onsubmit="addGroup(event)">
+            <label for="group_name">Group Name:</label>
+            <input type="text" id="group_name" name="group_name" required />
+            <label for="group_desc">Group Description:</label>
+            <textarea id="group_desc" name="group_desc"></textarea><br />
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+        <ul id="group-list"></ul>
+      </div>
       <div class="chatbox">
         <div class="chatbox-header">
           Chat Box
-          <button id="logout" type="button" onclick="logout()">Log Out</button>
+          <div class="add-member-btn">
+            <button id="add-member">Add Member</button>
+            <div id="add-member-form" class="form-popup">
+              <h2>Enter Email To Add A Member To Group</h2>
+              <button id="close-btn" onclick="closeForm()">&times;</button>
+              <form id="my-form" onsubmit="addMember(event)">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required />
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          </div>
+          <div class="show-members-btn">
+            <button id="show-members">Show Members</button>
+          </div>
         </div>
         <div class="chatbox-messages"></div>
         <div>
@@ -22,11 +54,18 @@
                 type="text"
                 placeholder="Type your message..."
                 id="new-message"
+                required
               />
               <button type="submit">Send</button>
             </div>
           </form>
         </div>
+      </div>
+      <div class="members-container">
+        <h3>Members</h3>
+        <ul id="members-list">
+          <li>no participants</li>
+        </ul>
       </div>
     </div>
   </body>
