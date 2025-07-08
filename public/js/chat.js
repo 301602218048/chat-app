@@ -84,23 +84,31 @@ async function displayGroupOnLoad() {
   }
 }
 
+let intervalId;
+
 groupList.addEventListener("click", (e) => {
   let groupId;
-  if (e.target.nodeName == "BUTTON") {
+  if (e.target.nodeName === "BUTTON") {
     const confirmDelete = confirm(
       "Are you sure you want to delete this group?"
     );
     if (confirmDelete) {
       groupId = e.target.parentElement.id;
+      clearInterval(intervalId);
       return deleteGroup(groupId);
     } else {
       return;
     }
   }
-  if (e.target.nodeName == "SPAN") {
+  if (e.target.nodeName === "SPAN") {
     groupId = e.target.parentElement.id;
-    localStorage.setItem("activeGroup", `${groupId}`);
+    localStorage.setItem("activeGroup", groupId);
     fetchAndShowChat(groupId);
+
+    clearInterval(intervalId);
+    intervalId = setInterval(() => {
+      fetchAndShowChat(groupId);
+    }, 1000);
   }
 });
 
