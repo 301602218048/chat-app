@@ -1,6 +1,6 @@
+const api = "http://localhost:3000";
 const chatList = document.querySelector(".chatbox-messages");
 const newMsg = document.getElementById("new-message");
-const api = "http://localhost:3000";
 const createGroupBtn = document.getElementById("create-group-btn");
 const createGroupForm = document.getElementById("create-group-form");
 const username = document.getElementById("current-user");
@@ -45,9 +45,15 @@ overlay.addEventListener("click", () => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    users = JSON.parse(localStorage.getItem("users"));
-    username.textContent = users[users.length - 1];
-    displayGroupOnLoad();
+    const token = localStorage.getItem("token");
+    if (token) {
+      document.body.style.display = "block";
+      users = JSON.parse(localStorage.getItem("users"));
+      username.innerHTML = `<b>${users[users.length - 1]}</b>`;
+      displayGroupOnLoad();
+    } else {
+      window.location.href = "/html/login.html";
+    }
   } catch (err) {
     console.log(err);
   }
@@ -56,10 +62,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function displayGroupOnLoad() {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:3000/group/getallgroups`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.get(`${api}/group/getallgroups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     groupList.innerHTML = "";
 
@@ -67,7 +72,10 @@ async function displayGroupOnLoad() {
     if (groupName) {
       groupName.forEach((group) => {
         groupList.innerHTML += `
-             <li id=${group.id}>${group.name}<button class="del btn-small">X</button></li>
+             <li id="${group.id}" style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="name">${group.name}</span>
+            <button class="del">X</button>
+            </li>
              `;
       });
     }
@@ -79,11 +87,18 @@ async function displayGroupOnLoad() {
 groupList.addEventListener("click", (e) => {
   let groupId;
   if (e.target.nodeName == "BUTTON") {
-    groupId = e.target.parentElement.id;
-    return deleteGroup(groupId);
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this group?"
+    );
+    if (confirmDelete) {
+      groupId = e.target.parentElement.id;
+      return deleteGroup(groupId);
+    } else {
+      return;
+    }
   }
-  if (e.target.nodeName == "LI") {
-    groupId = e.target.id;
+  if (e.target.nodeName == "SPAN") {
+    groupId = e.target.parentElement.id;
     localStorage.setItem("activeGroup", `${groupId}`);
     fetchAndShowChat(groupId);
   }
@@ -110,6 +125,7 @@ async function sendData(e) {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("messages");
+  localStorage.removeItem("activeGroup");
   const users = JSON.parse(localStorage.getItem("users"));
   if (users.length > 0) {
     users.pop();
@@ -147,12 +163,9 @@ async function fetchAndShowChat(groupId) {
   }
 
   const token = localStorage.getItem("token");
-  const response = await axios.get(
-    `http://localhost:3000/chat/fetchchat/${lastMsgId}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const response = await axios.get(`${api}/chat/fetchchat/${lastMsgId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (response.status == 200) {
     const newMsg = response.data.chat;
     let msg = oldText.concat(newMsg);
@@ -170,15 +183,29 @@ async function fetchAndShowChat(groupId) {
   }
 }
 
+async function deleteGroup(groupId) {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${api}/group/deletegroup/${groupId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    alert(response.data.message);
+    if (response.data.success) {
+      displayGroupOnLoad();
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 showMembers.addEventListener("click", () => fetchAndShowMembers(groupId));
 
 async function fetchAndShowMembers(groupId) {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:3000/admin/getallmembers/${groupId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.get(`${api}/admin/getallmembers/${groupId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     updateMemberList(response.data.members);
   } catch (error) {
     console.log(error);
@@ -186,16 +213,101 @@ async function fetchAndShowMembers(groupId) {
 }
 
 function updateMemberList(members) {
+  memberList.addEventListener("click", (e) => handleMembers(e));
   memberList.innerHTML = "";
+
   members.forEach((member) => {
-    if (member.isAdmin) {
-      memberList.innerHTML += `<li class="admin"><b>${member.dataValues.name}(admin)</b>
-                    <button class="rmuserbtn" id="${member.dataValues.id}">Remove</button></li>`;
-    } else {
-      memberList.innerHTML += `<li class="member">${member.dataValues.name}
-                    <button class="rmuserbtn" id="${member.dataValues.id}">Remove</button></li>`;
-    }
+    const isAdmin = member.isAdmin;
+    const name = member.dataValues.name;
+    const id = member.dataValues.id;
+
+    memberList.innerHTML += `
+      <li class="${
+        isAdmin ? "admin" : "member"
+      }" style="display: flex; align-items: center; position: relative; margin: 10px">
+        <span>${isAdmin ? "<b>(Admin)</b> " : ""}${name}</span>
+        
+        <button class="menu-toggle" data-id="${id}">⋯</button>
+        
+        <div class="edit-box" id="edit-${id}" style="display: none;">
+          ${
+            isAdmin
+              ? `<button class="rmadminbtn" id="${id}">Remove Admin</button>`
+              : `<button class="makeadminbtn" id="${id}">Make Admin</button>`
+          }
+          <button class="rmuserbtn" id="${id}">Remove User</button>
+        </div>
+      </li>`;
   });
+
+  document.querySelectorAll(".menu-toggle").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.target.dataset.id;
+      const menu = document.getElementById(`edit-${id}`);
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
+    });
+  });
+}
+
+function handleMembers(e) {
+  let userId = e.target.id;
+  let name = e.target.className;
+  let token = localStorage.getItem("token");
+  let groupID = localStorage.getItem("activeGroup");
+  if (name == "makeadminbtn") {
+    makeAdmin(userId, token, groupID);
+  }
+  if (name == "rmadminbtn") {
+    removeAdmin(userId, token, groupID);
+  }
+  if (name == "rmuserbtn") {
+    removeUser(userId, token, groupID);
+  }
+}
+async function makeAdmin(userId, token, groupId) {
+  try {
+    let res = await axios.post(
+      `${api}/admin/makeAdmin`,
+      { groupId, userId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.status == 200) {
+      fetchAndShowMembers(groupId);
+    }
+    if (res.status == 403) {
+      alert("permission denied");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function removeAdmin(userId, token, groupId) {
+  try {
+    const removeAdminResponse = await axios.post(
+      `${api}/admin/removeAdmin`,
+      { userId: userId, groupId: groupId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (removeAdminResponse.status == 200) {
+      fetchAndShowMembers(groupId);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function removeUser(userId, token, groupId) {
+  try {
+    const removeUserResponse = await axios.post(
+      `${api}/admin/removeUser`,
+      { userId: userId, groupId: groupId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (removeUserResponse.status == 200) {
+      fetchAndShowMembers(groupId);
+    }
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 async function addGroup(e) {
@@ -206,15 +318,14 @@ async function addGroup(e) {
       description: e.target.group_desc.value,
     };
     const token = localStorage.getItem("token");
-    const response = await axios.post(
-      "http://localhost:3000/group/addgroup",
-      groupDetails,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.post(`${api}/group/addgroup`, groupDetails, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     console.log(response);
     if (response.status === 200) {
       alert("Created Group Successfully");
       closePopup(createGroupForm);
+      displayGroupOnLoad();
     }
   } catch (error) {
     console.log(error);
@@ -232,11 +343,9 @@ async function addMember(e) {
     };
     console.log(newMemberData);
     const token = localStorage.getItem("token");
-    const response = await axios.post(
-      "http://localhost:3000/admin/addMember",
-      newMemberData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.post(`${api}/admin/addMember`, newMemberData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (response.status === 200) {
       alert("Member Added Successfully");
       closePopup(addMemberForm);
