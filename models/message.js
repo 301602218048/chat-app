@@ -7,6 +7,10 @@ const Message = sequelize.define("messages", {
     primaryKey: true,
     autoIncrement: true,
   },
+  file: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   message: {
     type: DataTypes.STRING,
     allowNull: false,

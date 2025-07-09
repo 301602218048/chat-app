@@ -5,6 +5,7 @@ const createGroupBtn = document.getElementById("create-group-btn");
 const createGroupForm = document.getElementById("create-group-form");
 const username = document.getElementById("current-user");
 const addMemberBtn = document.getElementById("add-member");
+const multimediaInput = document.getElementById("multimedia");
 const addMemberForm = document.getElementById("add-member-form");
 const closeButtons = document.querySelectorAll("#close-btn");
 const groupList = document.getElementById("group-list");
@@ -125,6 +126,7 @@ async function sendData(e) {
     e.preventDefault();
     const groupId = localStorage.getItem("activeGroup");
     const newMessage = {
+      file: multimediaInput.value,
       message: newMsg.value,
       groupId,
     };
