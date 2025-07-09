@@ -17,6 +17,11 @@ const overlay = document.createElement("div");
 overlay.classList.add("popup-overlay");
 document.body.appendChild(overlay);
 
+var socket = io();
+socket.on("connect", () => {
+  console.log(`you are connected with ${socket.id}`);
+});
+
 function openPopup(popup) {
   popup.style.display = "block";
   overlay.style.display = "block";
@@ -103,12 +108,15 @@ groupList.addEventListener("click", (e) => {
   if (e.target.nodeName === "SPAN") {
     groupId = e.target.parentElement.id;
     localStorage.setItem("activeGroup", groupId);
-    fetchAndShowChat(groupId);
-
-    clearInterval(intervalId);
-    intervalId = setInterval(() => {
+    socket.emit("join room", groupId);
+    socket.on("joined", (room) => {
       fetchAndShowChat(groupId);
-    }, 1000);
+    });
+    // fetchAndShowChat(groupId);
+    // clearInterval(intervalId);
+    // intervalId = setInterval(() => {
+    //   fetchAndShowChat(groupId);
+    // }, 1000);
   }
 });
 
@@ -121,14 +129,19 @@ async function sendData(e) {
       groupId,
     };
     const token = localStorage.getItem("token");
-    await axios.post(`${api}/chat/sendmessage`, newMessage, {
+    const response = await axios.post(`${api}/chat/sendmessage`, newMessage, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    socket.emit("new message", response);
     newMsg.value = "";
   } catch (error) {
     console.log(error);
   }
 }
+socket.on("message recieved", (message) => {
+  let msg = message.data;
+  updateChat(msg.message, msg.name);
+});
 
 function logout() {
   localStorage.removeItem("token");
@@ -206,7 +219,10 @@ async function deleteGroup(groupId) {
   }
 }
 
-showMembers.addEventListener("click", () => fetchAndShowMembers(groupId));
+showMembers.addEventListener("click", () => {
+  const groupId = localStorage.getItem("activeGroup");
+  fetchAndShowMembers(groupId);
+});
 
 async function fetchAndShowMembers(groupId) {
   try {
