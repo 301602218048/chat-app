@@ -9,6 +9,7 @@ require("dotenv").config();
 
 //models
 require("./models");
+require("./utils/archive-1day");
 
 const app = express();
 
@@ -27,7 +28,7 @@ const server = app.listen(port, () => {
   console.log(`server running on http://localhost:${port}`);
 });
 
-db.sync({ force: false })
+db.sync({ alter: true })
   .then(() => {
     console.log("db synced");
   })

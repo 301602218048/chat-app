@@ -124,25 +124,43 @@ groupList.addEventListener("click", (e) => {
 async function sendData(e) {
   try {
     e.preventDefault();
+    let imageurl;
+    const token = localStorage.getItem("token");
+
+    if (multimediaInput.files[0] !== undefined) {
+      let file = multimediaInput.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("filename", file.name);
+      const { data } = await axios.post(
+        "http://localhost:3000/chat/uploadtos3",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      imageurl = data.location;
+    }
     const groupId = localStorage.getItem("activeGroup");
     const newMessage = {
-      file: multimediaInput.value,
+      file: imageurl ? imageurl : null,
       message: newMsg.value,
       groupId,
     };
-    const token = localStorage.getItem("token");
     const response = await axios.post(`${api}/chat/sendmessage`, newMessage, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    socket.emit("new message", response);
-    newMsg.value = "";
+    if (response.status === 200) {
+      multimediaInput.value = null;
+      imageurl = "";
+      newMsg.value = "";
+      socket.emit("new message", response);
+    }
   } catch (error) {
     console.log(error);
   }
 }
 socket.on("message recieved", (message) => {
-  let msg = message.data;
-  updateChat(msg.message, msg.name);
+  let msg = message.data.message;
+  updateChat(msg.message, msg.from, msg.file);
 });
 
 function logout() {
@@ -157,20 +175,36 @@ function logout() {
   window.location.href = "/html/login.html";
 }
 
-function updateChat(message, from) {
+function updateChat(message, from, file) {
   const newMessage = document.createElement("div");
   if (from === username.textContent) {
     newMessage.classList.add("chatbox-message-sent");
-    newMessage.innerHTML = `
+    if (file === null) {
+      newMessage.innerHTML = `
         <span>You:</span>
         <p>${message}</p>
     `;
+    } else {
+      newMessage.innerHTML = `
+        <span>You:</span>
+        <p>${message}</p>
+        <a href=${file}>${file}</a>
+    `;
+    }
   } else {
     newMessage.classList.add("chatbox-message");
-    newMessage.innerHTML = `
+    if (file === null) {
+      newMessage.innerHTML = `
         <span>${from}:</span>
         <p>${message}</p>
     `;
+    } else {
+      newMessage.innerHTML = `
+        <span>${from}:</span>
+        <p>${message}</p>
+        <a href=${file}>${file}</a>
+    `;
+    }
   }
   chatList.appendChild(newMessage);
 }
@@ -201,7 +235,7 @@ async function fetchAndShowChat(groupId) {
     const msgToShow = msg.filter((item) => item.groupId == groupId);
     chatList.innerHTML = "";
     msgToShow.forEach((element) => {
-      updateChat(element.message, element.from);
+      updateChat(element.message, element.from, element.file);
     });
   }
 }

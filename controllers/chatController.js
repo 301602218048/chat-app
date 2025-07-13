@@ -1,31 +1,40 @@
-const Message = require("../models/message");
-const s3Service = require("../services/s3Service");
+const { Message, ArchiveMsg } = require("../models");
 const { Op } = require("sequelize");
+const uploadtoS3 = require("../controllers/s3");
+
+const UploadToS3 = async (req, res) => {
+  try {
+    const file = req.file;
+    const filename = req.body.filename;
+    const location = await uploadtoS3(file, filename);
+    res.status(200).json({
+      status: "success",
+      location,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: "false", err });
+  }
+};
 
 const postMessage = async (req, res) => {
   try {
     const user = req.user;
     const { file, message, groupId } = req.body;
-    const filename = `ChatApp-${user.id}-${new Date()}.txt`;
-    const fileUrl = await s3Service.UploadToS3(file, filename);
     if (message === "" && file === null) {
       return res.status(401).json({ msg: "invalid message", success: false });
     }
     const newMessage = await Message.create({
       message,
-      file: fileUrl,
+      file,
       from: user.name,
       userId: user.id,
       groupId,
     });
-    res
-      .status(200)
-      .json({
-        success: true,
-        name: user.name,
-        message: newMessage.message,
-        file: newMessage.file,
-      });
+    res.status(200).json({
+      success: true,
+      message: newMessage,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, msg: `${error.message}` });
@@ -35,17 +44,31 @@ const postMessage = async (req, res) => {
 const fetchChat = async (req, res) => {
   try {
     const lastMsgId = +req.params.lastId;
-    const chat = await Message.findAll({
+    const recentChat = await Message.findAll({
       where: { id: { [Op.gt]: lastMsgId } },
     });
-    if (chat.length === 0) {
+
+    let archivedChat = [];
+    if (recentChat.length === 0 && lastMsgId > 0) {
+      archivedChat = await ArchivedMessage.findAll({
+        where: { id: { [Op.gt]: lastMsgId } },
+      });
+    }
+
+    const combinedChat = [...recentChat, ...archivedChat];
+
+    if (combinedChat.length === 0) {
       return res
         .status(200)
         .json({ success: true, msg: "chat up to date", chat: [] });
     }
     res
       .status(200)
-      .json({ success: true, chat, lastChatId: chat[chat.length - 1].id });
+      .json({
+        success: true,
+        chat: combinedChat,
+        lastChatId: combinedChat[combinedChat.length - 1].id,
+      });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, msg: `${error.message}` });
@@ -55,4 +78,5 @@ const fetchChat = async (req, res) => {
 module.exports = {
   postMessage,
   fetchChat,
+  UploadToS3,
 };
